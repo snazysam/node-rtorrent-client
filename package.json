@@ -1,0 +1,34 @@
+{
+  "name": "node-rtorrent-client",
+  "version": "0.0.1",
+  "description": "Versatile rTorrent client for Node applications",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha -r esm --reporter spec"
+  },
+  "keywords": [
+    "rtorrent",
+    "xmlrpc"
+  ],
+  "author": "Sam",
+  "license": "MIT",
+  "esm": {
+    "await": true
+  },
+  "dependencies": {
+    "command-line-args": "^5.1.1",
+    "command-line-usage": "^6.1.1",
+    "esm": "^3.2.25",
+    "mixwith": "^0.1.1",
+    "promise-socket": "^7.0.0",
+    "superagent": "^6.1.0",
+    "xmldom": "^0.4.0",
+    "xmlrpc": "^1.3.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1",
+    "proxyquire": "^2.1.3",
+    "sinon": "^9.2.4"
+  }
+}
