@@ -1,8 +1,12 @@
 {
   "name": "node-rtorrent-client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Versatile rTorrent client for Node applications",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "github:snazysam/node-rtorrent-client"
+  },
   "scripts": {
     "test": "./node_modules/.bin/mocha -r esm --reporter spec"
   },
