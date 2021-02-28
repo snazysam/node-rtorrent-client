@@ -69,9 +69,57 @@ await client.torrent.start( 'hashoftorrent' )
 
 **More to come**
 
+# CLI
+
+The included cli.js script can be used for direct CLI access to rTorrent without being restricted to the interface.
+
+For usage information, execute:
+
+```
+node -r esm cli.js --help
+```
+
+That should yield something like this:
+
+```
+rTorrent client
+
+  Runs remote procedure commands on the rTorrent server
+
+Execution
+
+  $ node -r esm cli.js [options] -- command param1 param2...
+
+Options
+
+  -m, --mode string       Connection mode, either scgi or xmlrpc
+  -h, --host string       Host name or IP address for SCGI or XMLRPC
+  -p, --port number       Port number for SCGI or XMLRPC
+  -a, --path string       XMLRPC path
+  -u, --username string   XMLRPC username (auth basic only)
+  -w, --password string   XMLRPC password
+  -s, --socket file       Socket path for SCGI
+  -?, --help              Display this usage information
+```
+
+Examples: 
+
+```
+# To list all methods available via XMLRPC:
+node -r esm cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- system.listMethods
+
+# To list all methods available via SCGI:
+node -r esm cli.js -m scgi -w /tmp/rtorrent.sock -- system.listMethods
+
+# To fetch the hash and label for each active torrent:
+node -r esm cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- d.multicall2 '' active d.hash= d.custom1=
+```
+
+Refer to rTorrent XMLRPC manual for more information about commands.
+
 # Support
 
-This software is likely full of bugs. You're welcome to fork or raise issues, and are encouraged to contribute with pull requests.
+This software is likely full of bugs. Parts of it are completely untested, and much of the connection handling code has no test cases. Please feel free to contribute with pull requests.
 
 # Acknowledgments
 

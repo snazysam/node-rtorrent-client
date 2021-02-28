@@ -69,12 +69,9 @@ try {
   await client.testConnection();
 }
 catch( e ) {
-  console.log( "Connection test failed, aborting" );
-  console.log( e );
+  console.log( "Connection test failed, aborting. Error: " + e.message );
   process.exit( 1 );
 }
-
-console.log( "Executing method", method, "with parameters", params );
 
 try {
   result = await client.send( method, ...params );
