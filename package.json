@@ -3,6 +3,7 @@
   "version": "0.0.6",
   "description": "Versatile rTorrent client for Node applications",
   "main": "index.js",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "github:snazysam/node-rtorrent-client"
