@@ -88,7 +88,7 @@ rTorrent client
 
 Execution
 
-  $ node -r esm cli.js [options] -- command param1 param2...
+  $ node cli.js [options] -- command param1 param2...
 
 Options
 
@@ -106,13 +106,13 @@ Examples:
 
 ```
 # To list all methods available via XMLRPC:
-node -r esm cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- system.listMethods
+node cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- system.listMethods
 
 # To list all methods available via SCGI:
-node -r esm cli.js -m scgi -w /tmp/rtorrent.sock -- system.listMethods
+node cli.js -m scgi -w /tmp/rtorrent.sock -- system.listMethods
 
 # To fetch the hash and label for each active torrent:
-node -r esm cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- d.multicall2 '' active d.hash= d.custom1=
+node cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- d.multicall2 '' active d.hash= d.custom1=
 ```
 
 Refer to rTorrent XMLRPC manual for more information about commands.

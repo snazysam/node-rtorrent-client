@@ -10,6 +10,7 @@
   "scripts": {
     "test": "./node_modules/.bin/mocha -r esm --reporter spec"
   },
+  "type": "module",
   "keywords": [
     "rtorrent",
     "xmlrpc"
@@ -22,7 +23,6 @@
   "dependencies": {
     "command-line-args": "^5.1.1",
     "command-line-usage": "^6.1.1",
-    "esm": "^3.2.25",
     "promise-socket": "^7.0.0",
     "superagent": "^6.1.0",
     "xmldom": "^0.4.0",

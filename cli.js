@@ -26,7 +26,7 @@ const sections = [
   },
   {
     'header': "Execution",
-    'content': '$ node -r esm cli.js [options] -- command param1 param2...'
+    'content': '$ node cli.js [options] -- command param1 param2...'
   },
   {
     'header': "Options",
