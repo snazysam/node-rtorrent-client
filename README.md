@@ -43,7 +43,7 @@ await client.torrent.multicall( 'active' )
     .send();
 
 /* Get the name, hash and label for all torrents */
-var result = await client.torrent.multicall()
+var result = await client.torrent.multiCall()
     .torrent.name()
     .torrent.hash()
     .torrent.getLabel()
