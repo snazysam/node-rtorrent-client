@@ -8,7 +8,7 @@
     "url": "github:snazysam/node-rtorrent-client"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha -r esm --reporter spec"
+    "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "type": "module",
   "keywords": [
