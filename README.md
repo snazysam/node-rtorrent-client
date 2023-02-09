@@ -34,7 +34,7 @@ const client = new Client( options );
 await client.testConnection();
 
 /* Send returns a promise, so either await or resolve else ways */
-var methods = await client.system.listMethods()
+let methods = await client.system.listMethods()
     .send();
 
 /* Stop all active torrents through chaining commands */
@@ -43,7 +43,7 @@ await client.torrent.multicall( 'active' )
     .send();
 
 /* Get the name, hash and label for all torrents */
-var result = await client.torrent.multiCall()
+let result = await client.torrent.multiCall()
     .torrent.name()
     .torrent.hash()
     .torrent.getLabel()
@@ -76,7 +76,7 @@ The included cli.js script can be used for direct CLI access to rTorrent without
 For usage information, execute:
 
 ```
-node -r esm cli.js --help
+node cli.js --help
 ```
 
 That should yield something like this:
@@ -108,7 +108,7 @@ Examples:
 # To list all methods available via XMLRPC:
 node cli.js -m xmlrpc -h 10.1.2.3 -p 8080 -u username -w password -a /RPC2 -- system.listMethods
 
-# To list all methods available via SCGI:
+# To list all methods available via SCGI socket:
 node cli.js -m scgi -w /tmp/rtorrent.sock -- system.listMethods
 
 # To fetch the hash and label for each active torrent:

@@ -1,6 +1,6 @@
 {
   "name": "node-rtorrent-client",
-  "version": "0.0.6",
+  "version": "0.0.9",
   "description": "Versatile rTorrent client for Node applications",
   "main": "index.js",
   "repository": {
@@ -17,9 +17,6 @@
   ],
   "author": "Sam",
   "license": "MIT",
-  "esm": {
-    "await": true
-  },
   "dependencies": {
     "command-line-args": "^5.1.1",
     "command-line-usage": "^6.1.1",
