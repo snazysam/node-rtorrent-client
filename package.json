@@ -1,6 +1,6 @@
 {
   "name": "node-rtorrent-client",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "Versatile rTorrent client for Node applications",
   "main": "index.js",
   "repository": {
