@@ -3,7 +3,7 @@ import Chai from 'chai';
 
 const expect = Chai.expect;
 
-import Serializer from '../lib/serializer.js';
+import Serializer from '../lib/serializer';
 
 
 describe("Serializer - ", function() {
