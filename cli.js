@@ -1,5 +1,5 @@
 
-import Client from './index.js';
+import { Client } from './dist/client.js';
 
 import util from 'util';
 

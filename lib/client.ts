@@ -1,13 +1,15 @@
 
 
 
-import Connection from './connection.js';
+import { Connection, ConnectionConfig } from './connection.js';
 
 import { SystemInterface } from './interface/system.js';
 import { TorrentInterface } from './interface/torrent.js';
 import { FileInterface } from './interface/file.js';
 
 
+export type CallParam = string | number | Buffer | undefined;
+type Context = 'none' | 'sub' | 'primary';
 
 /**
  * A XMLRPC client for rtorrent
@@ -21,17 +23,23 @@ import { FileInterface } from './interface/file.js';
  * @property {SystemInterface} system    - The system interface
  * @property {FileInterface} file        - The file interface
  * @property {TorrentInterface} torrent  - The torrent interface
- *
  * @class
  */
 export class Client {
 
+  private _context: Context;
+  private _calls: CallParam[];
+
+  protected connection: Connection;
+  protected system: SystemInterface;
+  protected torrent: TorrentInterface;
+  protected file: FileInterface;
+
   /**
    * Instantiate a new client
-   * @param {Object} connectionConfig   - Connection configuration
-   * @see Connection#constructor
+   * @param {ConnectionConfig} connectionConfig   - Connection configuration
    */
-  constructor( connectionConfig ) {
+  constructor( connectionConfig: ConnectionConfig ) {
     this.connection = new Connection( connectionConfig );    
 
     // Track call context
@@ -60,18 +68,18 @@ export class Client {
    * @returns {Promise<String>} - Resolves if able to connect
    * @throws                    - Rejects if unable to connect
    */
-  async testConnection() {
+  async testConnection(): Promise<string> {
     return await this.system.apiVersion().send();
   }
 
 
   /**
    * Add a multicall method to the call queue
-   * @param {String} method     - Method name
-   * @param {*[]} params        - Call parameters as required
-   * @returns {this}            - Client object to chain calls
+   * @param {String} method         - Method name
+   * @param {CallParam[]} params    - Call parameters as required
+   * @returns {this}                - Client object to chain calls
    */
-  addMultiCall( method, ...params ) {
+  addMultiCall( method: string, ...params: CallParam[] ): this {
     this.requiresContext( [ 'primary' ] );
     this._calls.push( method, ...params );
     this._context = "sub";
@@ -81,12 +89,12 @@ export class Client {
 
   /** 
    * Add a call to the stack which is usable as a primary or sub command
-   * @param {String} method     - Method name
-   * @param {*} [hash]          - First parameter, typically a hash. Ignored for sub call.
-   * @param {...*} [params]     - Parameters for the call
-   * @returns {this}            - Client object to chain calls
+   * @param {String} method         - Method name
+   * @param {CallParam} [hash]      - First parameter, typically a hash. Ignored for sub call.
+   * @param {...CallParam} [params] - Parameters for the call
+   * @returns {this}                - Client object to chain calls
    */
-  addCall( method, hash=undefined, ...params ) {
+  addCall( method: string, hash: CallParam=undefined, ...params: CallParam[] ): this {
     this.requiresContext( [ 'sub', 'primary' ] );
     if ( this._context == "sub" )
       return this.addSub( method, ...params );
@@ -97,12 +105,12 @@ export class Client {
 
   /** 
    * Add a primary-only call to the stack
-   * @param {String} method     - Method name
-   * @param {*} [hash]          - First parameter, typically a hash.
-   * @param {...*} [params]     - Parameters for the call
-   * @returns {this}            - Client object to chain calls
+   * @param {String} method           - Method name
+   * @param {CallParam} [hash]        - First parameter, typically a hash.
+   * @param {...CallParam} [params]   - Parameters for the call
+   * @returns {this}                  - Client object to chain calls
    */
-  addPrimary( method, hash=undefined, ...params ) {
+  addPrimary( method: string, hash: CallParam=undefined, ...params: CallParam[] ): this {
     this.requiresContext( [ 'primary' ] );
     this._calls.push( method, hash, ...params );
     // Prevent sub-calls
@@ -113,11 +121,11 @@ export class Client {
 
   /**
    * Add a method to the queue that can only be a sub command
-   * @param {String} method     - The method name to call
-   * @param {...*} [params]     - Parameters for the call
-   * @returns {this}            - Client object to chain calls
+   * @param {String} method         - The method name to call
+   * @param {...CallParam} [params] - Parameters for the call
+   * @returns {this}                - Client object to chain calls
    */
-  addSub( method, ...params ) {
+  addSub( method: string, ...params: CallParam[] ): this {
     this.requiresContext( [ 'sub' ] );
     this._calls.push( method + "=" + params.join( ',' ) );
     return this;
@@ -127,21 +135,21 @@ export class Client {
 
   /**
    * Check call stack is in a required context
-   * @param {String[]} contexts - Permissable contexts
-   * @throws                    - If context is not as required
+   * @param {Context[]} contexts - Permissable contexts
+   * @throws                      - If context is not as required
    */
-  requiresContext( contexts ) {
-    if ( contexts.indexOf( this._context ) == -1 )
-      throw new Error( "Context is " + this._context + ". Call requires context of " + contexts.join( ',' ) );
+  requiresContext( contexts: Context[] ) {
+    if ( ! contexts.includes( this._context ) )
+      throw new Error( "Context is " + this._context + ". Call requires context of " + contexts.join( ', or ' ) );
   }
 
 
   /**
    * Send our queued commands or something different
    * @async
-   * @param {...*} calls - Any method and parameter arguments to send instead of queued calls.
+   * @param {...CallParam} [calls] - Any method and parameter arguments to send instead of queued calls.
    */
-  async send( ...calls ) {
+  async send( ...calls: CallParam[] ) {
     let method, result, usingQueued = false;
 
     // Use provided calls or our own
@@ -153,10 +161,10 @@ export class Client {
     method = calls.shift();
 
     try { 
-      result = await this.connection.send( method, calls );
+      result = await this.connection.send( method as string, calls );
     }
     catch( err ) {
-      throw new Error( `Failed to send command: ${err.message}` );
+      throw new Error( `Failed to send command: ${(err as Error).message}` );
     }
 
     // Clear our queue

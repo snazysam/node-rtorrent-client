@@ -1,9 +1,10 @@
 
 import XMLDom from 'xmldom';
 
-
 const DOMParser = XMLDom.DOMParser;
 
+
+type SerializableParam = any;
 
 /**
  * XML serializing utility static class
@@ -15,16 +16,16 @@ export default class Serializer {
   /** 
    * Serialize a request method and parameters to XML
    * @static
-   * @param {String} method - The method to call
-   * @param {*[]} params    - Parameters for the call
-   * @returns {String}      - The serialized XML
+   * @param {String} method               - The method to call
+   * @param {SerializableParam[]} params  - Parameters for the call
+   * @returns {String}                    - The serialized XML
    */
-  static serialize( method, params ) {
+  static serialize( method: string, params: SerializableParam[] ): string {
     const template = '<?xml version="1.0"?><methodCall><methodName></methodName><params></params></methodCall></xml>';
     const doc = new DOMParser().parseFromString(template);
     const dom_methodName = doc.getElementsByTagName('methodName')[0];
     const dom_params = doc.getElementsByTagName('params')[0];
-    let dom_param;
+    let dom_param: HTMLElement;
 
     dom_methodName.appendChild( doc.createTextNode( method ) );
 
@@ -40,24 +41,24 @@ export default class Serializer {
   /**
    * Serialize a value into the XML fragment
    * @static
-   * @param {Object} fragment - DOM fragment
-   * @param {*[]} param       - Parameter to serialize
+   * @param {HTMLElement} fragment    - DOM fragment
+   * @param {SerializableParam} param - Parameter to serialize
    */
-  static serializeValue( fragment, param ) {
+  static serializeValue( fragment: HTMLElement, param: SerializableParam ) {
     const type = typeof param;
     const doc = fragment.ownerDocument;
     const dom = doc.createElement('value');
 
     if ( type == "string" )
-      this.buildString( dom, param );
+      this.buildString( dom, param as string );
     else if ( type == "number" )
-      this.buildNumber( dom, param );
+      this.buildNumber( dom, param as number );
     else if ( Array.isArray( param ) )
       this.buildArray( dom, param );
     else if ( param instanceof Date )
-      this.buildDate( dom, param );
+      this.buildDate( dom, param as Date );
     else if ( Buffer.isBuffer( param ) )
-      this.buildData( dom, param );
+      this.buildData( dom, param as Buffer );
     else if ( type == "object" )
       this.buildObject( dom, param );
 
@@ -68,10 +69,10 @@ export default class Serializer {
   /** 
    * Serialize a string into a XML fragment
    * @static
-   * @param {Object} fragment - DOM fragment to serialize into
-   * @param {String} param    - A string to serialize
+   * @param {HTMLElement} fragment  - DOM fragment to serialize into
+   * @param {String} param       - A string to serialize
    */
-  static buildString( fragment, param ) {
+  static buildString( fragment: HTMLElement, param: string ) {
     const doc = fragment.ownerDocument;
     let elem;
 
@@ -92,10 +93,10 @@ export default class Serializer {
   /**
    * Serialize character data
    * @static
-   * @param {Object} fragment - DOM fragment to serialize into
-   * @param {String} param    - A string to serialize
+   * @param {HTMLElement} fragment  - DOM fragment to serialize into
+   * @param {Buffer} param          - A string to serialize
    */
-  static buildData( fragment, param ) {
+  static buildData( fragment: HTMLElement, param: Buffer ) {
     const doc = fragment.ownerDocument;
     const elem = doc.createElement( 'base64' );
 
@@ -107,10 +108,10 @@ export default class Serializer {
   /**
    * Serialize a number
    * @static
-   * @param {Object} fragment - DOM fragment to serialize into
+   * @param {HTMLElement} fragment - DOM fragment to serialize into
    * @param {Number} param    - A string to serialize
    */
-  static buildNumber( fragment, param ) {
+  static buildNumber( fragment: HTMLElement, param: number ) {
     const doc = fragment.ownerDocument;
     let elem;
 
@@ -119,7 +120,7 @@ export default class Serializer {
     else
       elem = doc.createElement( 'double' );
 
-    elem.appendChild( doc.createTextNode( param ) );
+    elem.appendChild( doc.createTextNode( param + '' ) );
     fragment.appendChild( elem );
   }
 
@@ -127,10 +128,10 @@ export default class Serializer {
   /**
    * Serialize a date
    * @static
-   * @param {Object} fragment - DOM fragment to serialize into
+   * @param {HTMLElement} fragment - DOM fragment to serialize into
    * @param {Date} param      - A string to serialize
    */
-  static buildDate( fragment, param ) {
+  static buildDate( fragment: HTMLElement, param: Date ) {
     const doc = fragment.ownerDocument;
     const elem = doc.createElement('dateTime.iso8601');
     elem.appendChild( doc.createTextNode( param.toISOString() ) );
@@ -141,10 +142,10 @@ export default class Serializer {
   /**
    * Serialize an array
    * @static
-   * @param {Object} fragment - DOM fragment to serialize into
-   * @param {Array} param     - An array to serialize
+   * @param {HTMLElement} fragment - DOM fragment to serialize into
+   * @param {Array} param          - An array to serialize
    */
-  static buildArray( fragment, param ) {
+  static buildArray( fragment: HTMLElement, param: Array<any> ) {
     const doc = fragment.ownerDocument;
     const elem = doc.createElement('array');
     const data = doc.createElement('data');
@@ -161,22 +162,22 @@ export default class Serializer {
   /**
    * Serialize an object
    * @static
-   * @param {Object} fragment - DOM fragment to serialize into
-   * @param {Object} param    - An object to serialize
+   * @param {HTMLElement} fragment  - DOM fragment to serialize into
+   * @param {Object} param          - An object to serialize
    */
-  static buildObject( fragment, param ) {
+  static buildObject( fragment: HTMLElement, param: object ) {
     const doc = fragment.ownerDocument;
     const elem = doc.createElement('struct');
     let elem_member, elem_name;
 
-    for (const key in param) {
+    for ( const [ key, val ] of Object.entries( param ) ) {
       elem_member = doc.createElement('member');
       elem_name = doc.createElement('name');
 
       elem_name.appendChild( doc.createTextNode( key ) );
       elem_member.appendChild( elem_name );
 
-      this.serializeValue( elem_member, param[ key ] );
+      this.serializeValue( elem_member, val );
       elem.appendChild( elem_member );
     }
     fragment.appendChild(elem);

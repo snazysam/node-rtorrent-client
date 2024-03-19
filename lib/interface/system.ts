@@ -1,5 +1,7 @@
 
 
+import type { Client } from '../client.js';
+
 /**
  * System method interface class
  *
@@ -7,11 +9,12 @@
  * @class
  */
 export class SystemInterface {
+  protected client: Client;
 
   /**
    * Get a new system interface instance
    */
-  constructor( client ) {
+  constructor( client: Client ) {
     this.client = client;
   }
 
@@ -20,7 +23,7 @@ export class SystemInterface {
    * Get a list of all methods supported by rTorrent
    * @returns {Client}            - Client interface for further chaining
    */
-  listMethods() {
+  listMethods(): Client {
     return this.client.addCall( 'system.listMethods' );
   }
 
@@ -29,7 +32,7 @@ export class SystemInterface {
    * Get the rTorrent server API version
    * @returns {Client}            - Client interface for further chaining
    */
-  apiVersion() {
+  apiVersion(): Client {
     return this.client.addCall( 'system.api_version' );
   }
 
@@ -38,7 +41,7 @@ export class SystemInterface {
    * Get the rTorrent client version number
    * @returns {Client}            - Client interface for further chaining
    */
-  clientVersion() {
+  clientVersion(): Client {
     return this.client.addCall( 'system.client_version' );
   }
 
@@ -47,7 +50,7 @@ export class SystemInterface {
    * Get the rTorrent library version number
    * @returns {Client}            - Client interface for further chaining
    */
-  libraryVersion() {
+  libraryVersion(): Client {
     return this.client.addCall( 'system.library_version' );
   }
 
@@ -56,7 +59,7 @@ export class SystemInterface {
    * Get the rTorrent current working directory
    * @returns {Client}            - Client interface for further chaining
    */
-  cwd() {
+  cwd(): Client {
     return this.client.addCall( 'system.cwd' );
   }
 
@@ -66,7 +69,7 @@ export class SystemInterface {
    * @param {String} directory    - Desired working directory
    * @returns {Client}            - Client interface for further chaining
    */
-  setCwd( directory ) {
+  setCwd( directory: string ): Client {
     return this.client.addCall( 'system.cwd.set', '', directory );
   }
 
@@ -76,7 +79,7 @@ export class SystemInterface {
    * @param {String} variableName - The variable name to retrieve the value
    * @returns {Client}            - Client interface for further chaining
    */
-  env( variableName ) {
+  env( variableName: string ): Client {
     return this.client.addCall( 'system.env', '', variableName );
   }
 
@@ -85,7 +88,7 @@ export class SystemInterface {
    * Get the rTorrent file allocation mode. Adds a numeric boolean to outputs
    * @returns {Client}            - Client interface for further chaining
    */
-  fileAllocate() {
+  fileAllocate(): Client {
     return this.client.addCall( 'system.file.allocate' );
   }
 
@@ -94,7 +97,7 @@ export class SystemInterface {
    * Get the rTorrent system hostname 
    * @returns {Client}            - Client interface for further chaining
    */
-  hostname() {
+  hostname(): Client {
     return this.client.addCall( 'system.hostname' );
   }
 
@@ -103,7 +106,7 @@ export class SystemInterface {
    * Get the rTorrent running process ID
    * @returns {Client}            - Client interface for further chaining
    */
-  pid() {
+  pid(): Client {
     return this.client.addCall( 'system.pid' );
   }
 

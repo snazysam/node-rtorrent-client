@@ -12,10 +12,10 @@ A brand new, easy to use rTorrent client for NodeJS applications, written using 
 
 # Usage
 
-For CJS and ECMAScript applications:
+For ECMAScript applications:
 
 ```
-import Client from 'node-rtorrent-client'
+import { Client } from 'node-rtorrent-client'
 
 const options = {
   mode        : scgi,                          /* Either xmlrpc or scgi (default) */
