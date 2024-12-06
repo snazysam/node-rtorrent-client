@@ -6,7 +6,7 @@ import assert from 'assert'
 const expect = Chai.expect;
 
 
-import Deserializer from '../lib/deserializer';
+import { Deserializer } from '../lib/deserializer';
 
 
 describe("Deserializer - ", function() {
