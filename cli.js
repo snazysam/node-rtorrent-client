@@ -1,5 +1,5 @@
 
-import { Client } from './dist/client.js';
+import { Client, FaultError } from './dist/client.js';
 
 import util from 'util';
 
@@ -77,7 +77,12 @@ try {
   result = await client.send( method, ...params );
 }
 catch( e ) {
-  console.log( "Failed request", e );
+  if ( e instanceof FaultError ) {
+    console.log( `Procedure call fault: ${e.faultCode}, ${e.faultString}` );
+  }
+  else {
+    console.log( "Failed request", e );
+  }
   process.exit( 1 );
 }
 

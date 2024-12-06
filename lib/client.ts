@@ -6,6 +6,9 @@ import { Connection, ConnectionConfig } from './connection.js';
 import { SystemInterface } from './interface/system.js';
 import { TorrentInterface } from './interface/torrent.js';
 import { FileInterface } from './interface/file.js';
+import {FaultError} from './deserializer.js';
+
+export { FaultError } from './deserializer.js';
 
 
 export type CallParam = string | number | Buffer | undefined;
@@ -17,7 +20,7 @@ type Context = 'none' | 'sub' | 'primary';
  * This class does not check for call combinations that are invalid. Refer
  * to the rTorrent XMLRPC for method information.
  *
- * Due to the call queueing nature of this client, always chain mutli-command 
+ * Due to the call queueing nature of this client, always chain mutli-command
  * calls together to ensure that no unexpected calls enter the stack.
  *
  * @property {SystemInterface} system    - The system interface
@@ -40,7 +43,7 @@ export class Client {
    * @param {ConnectionConfig} connectionConfig   - Connection configuration
    */
   constructor( connectionConfig: ConnectionConfig ) {
-    this.connection = new Connection( connectionConfig );    
+    this.connection = new Connection( connectionConfig );
 
     // Track call context
     this._context = 'primary';
@@ -87,7 +90,7 @@ export class Client {
   }
 
 
-  /** 
+  /**
    * Add a call to the stack which is usable as a primary or sub command
    * @param {String} method         - Method name
    * @param {CallParam} [hash]      - First parameter, typically a hash. Ignored for sub call.
@@ -103,7 +106,7 @@ export class Client {
   }
 
 
-  /** 
+  /**
    * Add a primary-only call to the stack
    * @param {String} method           - Method name
    * @param {CallParam} [hash]        - First parameter, typically a hash.
@@ -148,6 +151,7 @@ export class Client {
    * Send our queued commands or something different
    * @async
    * @param {...CallParam} [calls] - Any method and parameter arguments to send instead of queued calls.
+   * @throws - Throws either a FaultError or generic Error if unable to complete the procedure call.
    */
   async send( ...calls: CallParam[] ) {
     let method, result, usingQueued = false;
@@ -160,11 +164,14 @@ export class Client {
 
     method = calls.shift();
 
-    try { 
+    try {
       result = await this.connection.send( method as string, calls );
     }
     catch( err ) {
-      throw new Error( `Failed to send command: ${(err as Error).message}` );
+      if ( err instanceof FaultError )
+        throw err;
+      else
+        throw new Error( `Failed to send command: ${(err as Error).message}` );
     }
 
     // Clear our queue

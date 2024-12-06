@@ -10,10 +10,10 @@ type SerializableParam = any;
  * XML serializing utility static class
  * @class
  */
-export default class Serializer {
+export class Serializer {
 
 
-  /** 
+  /**
    * Serialize a request method and parameters to XML
    * @static
    * @param {String} method               - The method to call
@@ -66,7 +66,7 @@ export default class Serializer {
   }
 
 
-  /** 
+  /**
    * Serialize a string into a XML fragment
    * @static
    * @param {HTMLElement} fragment  - DOM fragment to serialize into

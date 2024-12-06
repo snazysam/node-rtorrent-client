@@ -1,7 +1,7 @@
 
 
-import Serializer from './serializer.js';
-import Deserializer from './deserializer.js';
+import { Serializer } from './serializer.js';
+import { Deserializer } from './deserializer.js';
 
 import Superagent from 'superagent';
 import {PromiseSocket, TimeoutError} from "promise-socket"
@@ -35,7 +35,7 @@ const defaultConfig = {
 }
 
 
-/** 
+/**
  * A connection handler to rTorrent
  * @class
  */
@@ -69,7 +69,7 @@ export class Connection {
   }
 
 
-  /** 
+  /**
    * Setup a rTorrent direct SCGI connection
    */
   setupRtorrent() {
@@ -86,7 +86,7 @@ export class Connection {
   }
 
 
-  /** 
+  /**
    * Setup a XMLRPC connection
    */
   setupXmlrpc() {
@@ -97,7 +97,7 @@ export class Connection {
 
     if ( ! host )
       throw new Error( "Host missing for XMLRPC connection" );
-    
+
     if ( this._config.ssl )
       proto = "https";
     else
@@ -111,7 +111,7 @@ export class Connection {
 
   /**
    * Send via rtorrent
-   * @async 
+   * @async
    * @param {String} xml        - XML to send
    * @returns {Promise<String>} - Response XML
    * @throws                    - If SCGI communication is unsuccessful
@@ -162,7 +162,7 @@ export class Connection {
 
 
 
-  /** 
+  /**
    * Send a request via XMLRPC
    * @async
    * @param {String} xml        - XML fragment to send
@@ -172,7 +172,7 @@ export class Connection {
   async sendXmlRPC( xml: string ): Promise<string> {
     let response;
 
-    try { 
+    try {
       if ( 'username' in this._config && 'password' in this._config ) {
         response = await Superagent
           .post( this._xmlrpcURL )
@@ -210,7 +210,7 @@ export class Connection {
     const request = Serializer.serialize( method, params );
     let response, result;
 
-    try { 
+    try {
       if ( this._config.mode == "scgi" )
         response = await this.sendRtorrent( request );
       else if ( this._config.mode == "xmlrpc" )
