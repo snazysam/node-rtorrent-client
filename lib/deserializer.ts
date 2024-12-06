@@ -8,11 +8,24 @@ const DOMParser = XMLDom.DOMParser;
 
 type DeserializableParam = any;
 
+
+export class FaultError extends Error {
+  constructor( message : string ) {
+    super( message );
+    this.faultCode = null;
+    this.faultString = '';
+  }
+  faultCode: number | null;
+  faultString: string;
+}
+
+
+
 /**
  * XML deserializer static class
  * @class
  */
-export default class Deserializer {
+export class Deserializer {
 
 
   /**
@@ -43,7 +56,7 @@ export default class Deserializer {
       case '#text':
         if ( dom.nextSibling != undefined )
           return this.deserializeValue( dom.nextSibling );
-        else 
+        else
           return '';
       case 'string':
         // Support empty string elements
@@ -104,7 +117,7 @@ export default class Deserializer {
         const min = parseInt(time[1]);
         const sec = parseInt(time[2]);
         return new Date( Date.UTC(year,month - 1,day,hour,min,sec,0) );
-      default: 
+      default:
         throw new Error( "Unknown XML response node: " + dom.nodeName + ":'" + dom.toString() + "'" );
     }
   }
@@ -174,18 +187,24 @@ export default class Deserializer {
 
 
   /**
-   * Parse a fault 
+   * Parse a fault
    * @static
    * @param {ChildNode} dom - The DOM node
-   * @throws - In all cases throws an error
+   * @throws - In all cases throws a FaultError
    */
   static parseFault( dom: ChildNode ) {
-    let err;
-    if ( dom.firstChild === null )
-      err = 'Unspecified method';
-    else
-      err = this.deserializeValue( dom.firstChild );
-    throw new Error( "Failed to execute method: " + err );
+    let err, faultObj;
+    err = new FaultError( "Failed to execute method" );
+    if ( dom.firstChild === null ) {
+      err.faultCode = null;
+      err.faultString = 'Unspecified method';
+    }
+    else {
+      faultObj = this.deserializeValue(dom.firstChild);
+      err.faultCode = faultObj.faultCode;
+      err.faultString = faultObj.faultString;
+    }
+    throw err;
   }
 }
 
