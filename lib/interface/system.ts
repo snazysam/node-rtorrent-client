@@ -19,16 +19,17 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get a list of all methods supported by rTorrent
    * @returns {Client}            - Client interface for further chaining
    */
   listMethods(): Client {
+    console.warn( "Method system.listMethods only available via XML" );
     return this.client.addCall( 'system.listMethods' );
   }
 
 
-  /** 
+  /**
    * Get the rTorrent server API version
    * @returns {Client}            - Client interface for further chaining
    */
@@ -37,7 +38,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get the rTorrent client version number
    * @returns {Client}            - Client interface for further chaining
    */
@@ -46,7 +47,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get the rTorrent library version number
    * @returns {Client}            - Client interface for further chaining
    */
@@ -55,7 +56,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get the rTorrent current working directory
    * @returns {Client}            - Client interface for further chaining
    */
@@ -64,7 +65,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Set the rTorrent current working directory
    * @param {String} directory    - Desired working directory
    * @returns {Client}            - Client interface for further chaining
@@ -74,7 +75,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get the rTorrent system environment variable value
    * @param {String} variableName - The variable name to retrieve the value
    * @returns {Client}            - Client interface for further chaining
@@ -84,7 +85,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get the rTorrent file allocation mode. Adds a numeric boolean to outputs
    * @returns {Client}            - Client interface for further chaining
    */
@@ -93,8 +94,8 @@ export class SystemInterface {
   }
 
 
-  /** 
-   * Get the rTorrent system hostname 
+  /**
+   * Get the rTorrent system hostname
    * @returns {Client}            - Client interface for further chaining
    */
   hostname(): Client {
@@ -102,7 +103,7 @@ export class SystemInterface {
   }
 
 
-  /** 
+  /**
    * Get the rTorrent running process ID
    * @returns {Client}            - Client interface for further chaining
    */

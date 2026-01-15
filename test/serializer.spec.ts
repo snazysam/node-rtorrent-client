@@ -1,9 +1,8 @@
 
-import Chai from 'chai';
 
-const expect = Chai.expect;
+import {expect} from 'chai';
 
-import { Serializer } from '../lib/serializer';
+import { Serializer } from '../lib/serializer.js';
 
 
 describe("Serializer - ", function() {

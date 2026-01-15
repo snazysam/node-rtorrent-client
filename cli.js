@@ -1,5 +1,6 @@
 
-import { Client, FaultError } from './dist/client.js';
+import { Client } from './dist/client.js';
+import { XMLFaultError } from './dist/deserializer.js';
 
 import util from 'util';
 
@@ -7,14 +8,18 @@ import CLA from 'command-line-args';
 import CLU from 'command-line-usage';
 
 
+
 const optionDefs = [
-  { name: "mode",     alias: "m", type: String,  description: "Connection mode, either scgi or xmlrpc" },
-  { name: "host",     alias: "h", type: String,  description: "Host name or IP address for SCGI or XMLRPC" },
-  { name: "port",     alias: "p", type: Number,  description: "Port number for SCGI or XMLRPC" },
-  { name: "path",     alias: "a", type: String,  description: "XMLRPC path" },
-  { name: "username", alias: "u", type: String,  description: "XMLRPC username (auth basic only)" },
-  { name: "password", alias: "w", type: String,  description: "XMLRPC password" },
-  { name: "socket",   alias: "s", type: String,  description: "Socket path for SCGI", typeLabel: '{underline file}', },
+  { name: "mode",     alias: "m", type: String,  description: "Connection mode, either scgi socket or http" },
+  { name: "rpctype",  alias: "r", type: String,  description: "RPC payload type, xml or json" },
+  { name: "host",     alias: "h", type: String,  description: "Host name or IP address for HTTP or TCP socket" },
+  { name: "port",     alias: "p", type: Number,  description: "Port number for TCP socket or HTTP" },
+  { name: "path",     alias: "a", type: String,  description: "HTTP path" },
+  { name: "username", alias: "u", type: String,  description: "HTTP username (auth basic only)" },
+  { name: "password", alias: "w", type: String,  description: "HTTP password" },
+  { name: "socket",   alias: "s", type: String,  description: "Socket path for unix IPC socket", typeLabel: '{underline file}', },
+  { name: "ssl",                  type: Boolean, description: "Enable HTTPS" },
+  { name: "noverify",             type: Boolean, description: "Disable SSL certificate verification" },
   { name: "help",     alias: "?", type: Boolean, description: "Display this usage information" }
 ];
 
@@ -59,6 +64,11 @@ else if ( args.indexOf( '--' ) == -1 ) {
   process.exit( 1 );
 }
 
+if ( 'noverify' in options ) {
+  delete options[ 'noverify' ];
+  options[ 'verify' ] = false;
+}
+
 const client = new Client( options );
 
 var method = cmds[0];
@@ -77,7 +87,7 @@ try {
   result = await client.send( method, ...params );
 }
 catch( e ) {
-  if ( e instanceof FaultError ) {
+  if ( e instanceof XMLFaultError ) {
     console.log( `Procedure call fault: ${e.faultCode}, ${e.faultString}` );
   }
   else {

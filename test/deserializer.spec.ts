@@ -1,12 +1,9 @@
 
-
-import Chai from 'chai';
+import {expect} from 'chai';
 import assert from 'assert'
 
-const expect = Chai.expect;
 
-
-import { Deserializer } from '../lib/deserializer';
+import { Deserializer } from '../lib/deserializer.js';
 
 
 describe("Deserializer - ", function() {
@@ -46,7 +43,7 @@ describe("Deserializer - ", function() {
       try {
         Deserializer.deserialize( xml );
       }
-      catch( err ) {
+      catch( err: any ) {
         errored = true;
         expect( err.faultCode ).to.be.a( 'number' ).to.equal( -506 );
         expect( err.faultString ).to.be.a( 'string' ).to.equal( "Method 'blah' not defined" );

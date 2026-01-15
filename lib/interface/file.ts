@@ -25,7 +25,7 @@ export class FileInterface {
    * @returns {Client}            - Client interface for further chaining
    */
   multiCall( hash: string, filter: string='' ): Client {
-    return this.client.addMultiCall( "f.multicall", hash, filter ); 
+    return this.client.addMultiCall( "f.multicall", hash, filter );
   }
 
 

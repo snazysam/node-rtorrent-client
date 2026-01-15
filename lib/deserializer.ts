@@ -9,7 +9,7 @@ const DOMParser = XMLDom.DOMParser;
 type DeserializableParam = any;
 
 
-export class FaultError extends Error {
+export class XMLFaultError extends Error {
   constructor( message : string ) {
     super( message );
     this.faultCode = null;
@@ -35,8 +35,9 @@ export class Deserializer {
    * @returns {DeserializableParam[]} - Array of typed elements
    * @throws                          - If unable to parse XML
    */
-  static deserialize( xml: string ): DeserializableParam[] {
+  static deserialize( xml: string ): string[] {
     const root = new DOMParser().parseFromString( xml );
+
     if (! root ) throw new Error( "Failed to parse XML" );
     const dom = root.lastChild;
     if ( dom === null )
@@ -194,7 +195,7 @@ export class Deserializer {
    */
   static parseFault( dom: ChildNode ) {
     let err, faultObj;
-    err = new FaultError( "Failed to execute method" );
+    err = new XMLFaultError( "Failed to execute method" );
     if ( dom.firstChild === null ) {
       err.faultCode = null;
       err.faultString = 'Unspecified method';

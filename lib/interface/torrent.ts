@@ -1,4 +1,5 @@
 
+import assert from 'assert';
 import type { Client } from '../client.js';
 
 /**
@@ -22,7 +23,7 @@ export class TorrentInterface {
    * @returns {Client}            - Client interface for further chaining
    */
   multiCall( view: string='' ): Client {
-    return this.client.addMultiCall( "d.multicall2", '', view ); 
+    return this.client.addMultiCall( "d.multicall2", '', view );
   }
 
   /**
@@ -32,7 +33,7 @@ export class TorrentInterface {
    * @returns {Client}            - Client interface for further chaining
    */
   multiCallFiltered( view: string='', predicate: string='' ): Client {
-    return this.client.addMultiCall( "d.multicall.filtered", '', view, predicate ); 
+    return this.client.addMultiCall( "d.multicall.filtered", '', view, predicate );
   }
 
 
@@ -128,7 +129,7 @@ export class TorrentInterface {
 
 
   /**
-   * Set the current label of a torrent.
+   * Set the current label of a torrent, assuming custom1 is the label in your client
    * @param {String} label          - Desired label
    * @param {String|undefined} hash - Hash of torrent, undefined if a sub call
    * @returns {Client}              - Client interface for further chaining
@@ -146,6 +147,32 @@ export class TorrentInterface {
   getLabel( hash: string | undefined=undefined ): Client {
     return this.client.addCall( "d.custom1", hash );
   }
+
+
+  /**
+   * Get the value of a numbered custom variable. Adds the value to outputs
+   * @param {Number} num            - Custom property number, 1 to 5
+   * @param {String|undefined} hash - Hash of torrent, undefined if a sub call
+   * @returns {Client}              - Client interface for further chaining
+   */
+  getCustomN( num: number, hash: string | undefined=undefined ): Client {
+    assert( num >= 1 && num <= 5 );
+    return this.client.addCall( 'd.custom' + num, hash );
+  }
+
+
+  /**
+   * Set the value of a numbered custom variable.
+   * @param {Number} num            - Custom property number, 1 to 5
+   * @param {String} value          - Value for the custom variable
+   * @param {String|undefined} hash - Hash of torrent, undefined if a sub call
+   * @returns {Client}              - Client interface for further chaining
+   */
+  setCustomN( num: number, value: string, hash: string | undefined=undefined ): Client {
+    assert( num >= 1 && num <= 5 );
+    return this.client.addCall( 'd.custom' + num + '.set', hash, value );
+  }
+
 
 
   /**

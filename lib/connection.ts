@@ -3,23 +3,30 @@
 import { Serializer } from './serializer.js';
 import { Deserializer } from './deserializer.js';
 
-import Superagent from 'superagent';
 import {PromiseSocket, TimeoutError} from "promise-socket"
-import net from 'net';
+import net from 'node:net';
+import url, {UrlObject} from 'node:url';
+import https from 'node:https';
+import http from 'node:http';
 
-import type { URLType } from 'superagent/types.js';
 import type { CallParam } from './client.js';
+import {randomInt} from 'node:crypto';
 
+
+type Mode = "scgi" | "http";
+type RPCType = "xml" | "json";
 
 export interface ConnectionConfig {
-  mode: string,
-  host: string,
-  port: number,
-  ssl: boolean,
-  path: string,
-  username: string,
-  password: string,
-  socket: string
+  mode: Mode,
+  rpctype: RPCType,
+  socket?: string
+  host?: string,
+  port?: number,
+  ssl?: boolean,
+  verify?: boolean,
+  path?: string,
+  username?: string,
+  password?: string,
 };
 
 interface HeadObj {
@@ -27,11 +34,13 @@ interface HeadObj {
 }
 
 const defaultConfig = {
-  mode    : "scgi",
-  ssl     : false,
-  host    : "127.0.0.1",
-  port    : 8080,
-  path    : "/RPC2"
+  mode      : "scgi",
+  protocol  : "xml",
+  ssl       : false,
+  verify    : true,
+  host      : "127.0.0.1",
+  port      : 8080,
+  path      : "/RPC2"
 }
 
 
@@ -41,161 +50,204 @@ const defaultConfig = {
  */
 export class Connection {
 
-  private _config: ConnectionConfig;
-  private _scgiconf!: net.SocketConnectOpts;
-  private _xmlrpcURL!: URLType;
+  private config: ConnectionConfig;
+  private endpoint!: net.SocketConnectOpts | url.UrlObject;
 
   /**
    * Create a new connection
-   * @param {ConnectionConfig}  config        - Configuration object
-   * @param {String}  config.mode=scgi        - The connection mode, either 'scgi' (direct) or 'xmlrpc' (via HTTP)
-   * @param {Number}  [config.port=8080]      - The port to connect to if using TCP connectivity
-   * @param {String}  [config.host=127.0.0.1] - The host IP or name if ysing TCP connectivity
-   * @param {Boolean} [config.ssl=false]      - Enable or disable SSL
-   * @param {String}  [config.path=/RPC2]     - The path for the XMLRPC HTTP connection
-   * @param {String}  [config.username]       - The HTTP auth basic username if required
-   * @param {String}  [config.password]       - The HTTP auth basic password if required
-   * @param {String}  [config.socket]         - The socket path if using unix sockets for connectivity
+   * @param {ConnectionConfig}  config          - Configuration object
+   * @param {String}  config.mode=scgi          - The connection mode, either 'scgi' or 'http'
+   * @param {String}  [config.rpctype=xml]      - Type of RPC communication, xml or json
+   * @param {String}  [config.socket]           - IPC socket path for SCGI connection
+   * @param {Number}  [config.port=8080]        - Port number for TCP or HTTP connections
+   * @param {String}  [config.host=127.0.0.1]   - Host IP or name for TCP or HTTP connections
+   * @param {Boolean} [config.ssl=false]        - Enable or disable SSL
+   * @param {Boolean} [config.verify=true]      - Enable or disable SSL certificate verification
+   * @param {String}  [config.path=/RPC2]       - HTTP request path
+   * @param {String}  [config.username]         - HTTP auth username if required
+   * @param {String}  [config.password]         - HTTP auth password if required
    */
   constructor( config: ConnectionConfig ) {
-    this._config = Object.assign( {}, defaultConfig, config );
+    this.config = Object.assign( {}, defaultConfig, config );
 
-    if ( config.mode == "scgi" )
-      this.setupRtorrent();
-    else if ( config.mode == "xmlrpc" )
-      this.setupXmlrpc();
-    else
-      throw new Error( `Unknown connection mode ${config.mode}` );
+    this.setupConnection();
   }
 
 
+
   /**
-   * Setup a rTorrent direct SCGI connection
+   * Check provided options and setup the connection endpoint
+   * @private
+   * @throws
    */
-  setupRtorrent() {
-    const config = this._config;
+  private setupConnection(): void {
+    const config = this.config;
+    let url: url.UrlObject = {};
 
-    if ( ! ( config.port && config.host ) && ! config.socket )
-      throw new Error( "Socket or host and port are required for SCGI connections" );
-
-    if ( 'socket' in config && config.socket ) {
-      this._scgiconf = { path: config.socket };
+    if ( config.mode == "scgi" ) {
+      if ( 'socket' in config && config.socket ) {
+        this.endpoint = { path: config.socket };
+      }
+      else if ( 'host' in config && 'port' in config && config.host && config.port ) {
+        this.endpoint = { port: config.port, host: config.host };
+      }
+      else
+        throw new Error( "SCGI connection requires IPC or TCP socket options" );
+    }
+    else if ( config.mode == "http" ) {
+      url.host = config.host;
+      url.port = config.port;
+      url.pathname = config.path;
+      if ( config.ssl )
+        url.protocol = 'https';
+      else
+        url.protocol = 'http';
+      if ( 'username' in config && 'password' in config && config.username && config.password ) {
+        url.auth = config.username + ':' + config.password;
+      }
+      this.endpoint = url;
     }
     else
-      this._scgiconf = { host: config.host, port: config.port };
+      throw new Error( "Unknown connectioning mode" );
+
   }
 
 
   /**
-   * Setup a XMLRPC connection
-   */
-  setupXmlrpc() {
-    const host = this._config.host;
-    const port = this._config.port;
-    const path = this._config.path;
-    let proto;
-
-    if ( ! host )
-      throw new Error( "Host missing for XMLRPC connection" );
-
-    if ( this._config.ssl )
-      proto = "https";
-    else
-      proto = "http";
-
-    // Set URL
-    this._xmlrpcURL = proto + "://" + host + ":" + port + path;
-  }
-
-
-
-  /**
-   * Send via rtorrent
+   * Send via rtorrent's SCGI
+   * @private
    * @async
-   * @param {String} xml        - XML to send
-   * @returns {Promise<String>} - Response XML
-   * @throws                    - If SCGI communication is unsuccessful
+   * @param {RPCType} payloadType  - Type of payload, xml or json
+   * @param {String} payload        - Payload of XML or JSON to send
+   * @returns {Promise<String>}     - Response in XML or JSON
+   * @throws                        - If SCGI communication was unsuccessful
    */
-  async sendRtorrent( xml: string ): Promise<string> {
+  private async sendSCGI( payloadType: RPCType, payload: string ): Promise<string> {
+    let reply: string[] = [""];
+    let body: string;
     let response, sock, psock, header = '';
-    const headers: HeadObj={
-      "CONTENT_LENGTH"    : xml.length + '',
+
+    let headers: HeadObj={
+      "CONTENT_LENGTH"    : payload.length + '',
       "SCGI"              : '1',
       "REQUEST_METHOD"    : 'POST',
       "REQUEST_URI"       : '/'
     };
 
-    let headkey: keyof typeof headers;
-    for ( headkey in headers ) {
+    if ( payloadType == "xml" )
+      headers[ "CONTENT_TYPE" ] = 'text/xml';
+    else if ( payloadType == "json" )
+      headers[ "CONTENT_TYPE" ] = 'application/json';
+
+    for ( let headkey in headers ) {
       header += headkey + String.fromCharCode(0) + headers[ headkey ] + String.fromCharCode(0);
     }
 
     sock  = new net.Socket();
     psock = new PromiseSocket( sock );
 
+    if ( ! this.isSocket( this.endpoint ) )
+      throw new Error( "Unix or TCP port required" );
+
     try {
       psock.setTimeout(2000);
 
-      await psock.connect( this._scgiconf );
+      await psock.connect( this.endpoint );
 
       await psock.write( header.length.toString() + ":" + header );
       await psock.write( "," );
-      await psock.write( xml );
+      await psock.write( payload );
 
       response = await psock.readAll();
       if ( ! response )
         throw new Error( "Failed to read response" );
 
       await psock.end();
+
+      if ( payloadType == "xml" )
+        reply = Deserializer.deserialize( response.toString() );
+      else if ( payloadType == "json" ) {
+        body = response.toString();
+        body = body.slice( body.indexOf( '{' ) );
+        reply = [ JSON.parse( body ).result ];
+      }
     }
     catch( err ) {
       if ( err instanceof TimeoutError ) {
         throw new Error( "SCGI timeout." );
       }
       else {
+        if ( response )
         throw new Error( "SCGI request failed: " + (err as Error).message );
       }
     }
 
-    return response.toString();
+    return reply[0];
   }
 
 
-
   /**
-   * Send a request via XMLRPC
+   * Send a request via HTTP
    * @async
-   * @param {String} xml        - XML fragment to send
-   * @returns {Promise<String>} - Raw XML response
-   * @throws                    - If XML communication is unsuccessful
+   * @param {RPCType} payloadType  - Payload type, xml or json
+   * @param {String} payload        - XML fragment to send
+   * @returns {Promise<String>}     - Raw XML response
+   * @throws                        - If XML communication is unsuccessful
    */
-  async sendXmlRPC( xml: string ): Promise<string> {
+  private async sendHTTP( payloadType: RPCType, payload: string ): Promise<string> {
     let response;
+    let url: string;
+    let request: Request;
+    let opts: any = {};
+    let result: string[] = [""];
+    let agent: https.Agent;
+
+    if ( ! this.isURLObject( this.endpoint ) )
+      throw new Error( "HTTP connection configuration required" );
+
+    url = this.endpoint.protocol + '://' + this.endpoint.host + ':' + this.endpoint.port + this.endpoint.pathname;
+
+    if ( this.config.ssl && ! this.config.verify ) {
+      agent = new https.Agent( { rejectUnauthorized: false } );
+      opts[ "agent" ] = agent;
+    }
 
     try {
-      if ( 'username' in this._config && 'password' in this._config ) {
-        response = await Superagent
-          .post( this._xmlrpcURL )
-          .send( xml )
-          .auth( this._config.username, this._config.password )
-          .type( 'text/xml' )
-          .accept( 'text/xml' );
+      request = new Request( url );
+
+      opts[ "method" ] = "POST";
+      opts[ "headers" ] = {};
+      opts[ "body" ] = payload;
+
+      if ( payloadType == "xml" )
+        opts.headers[ 'Content-Type' ] = 'text/xml';
+      else if ( payloadType == "json" )
+        opts.headers[ 'Content-Type' ] = 'application/json';
+
+      if ( this.endpoint.auth ) {
+        opts.headers[ 'Authorization' ] = 'Basic ' + btoa( this.endpoint.auth );
       }
-      else {
-        response = await Superagent
-          .post( this._xmlrpcURL )
-          .send( xml )
-          .type( 'text/xml' )
-          .accept( 'text/xml' );
+
+      response = await fetch( request, opts );
+
+      if ( ! response.ok )
+        throw new Error( "Request failed: " + response.statusText );
+
+      if ( payloadType == "xml" ) {
+        let resp = await response.text();
+        result = Deserializer.deserialize( resp );
       }
-      if ( response.status !== 200 )
-        throw new Error( "XMLRPC request failed with: " + response.body );
+      else if ( payloadType == "json" ) {
+        let resp = await response.json();
+        result = resp;
+      }
+
     }
-    catch (e) {
-      throw e;
+    catch( err ) {
+      throw err;
     }
 
-    return response.text;
+    return result[0];
   }
 
 
@@ -207,14 +259,29 @@ export class Connection {
    * @throws                      - If communication is not successful
    */
   async send( method: string, params: CallParam[] ) {
-    const request = Serializer.serialize( method, params );
-    let response, result;
+    let response: any;
+    let payload: string = "";
+
+    if ( this.config.rpctype == "xml" )
+      payload = Serializer.serialize( method, params) ;
+    else if ( this.config.rpctype == "json" ) {
+      payload = "";
+      let json = {
+        'jsonrpc': '2.0',
+        'method': method,
+        'params': params,
+        'id': randomInt( 32768 ) + 1
+      };
+      if ( json.params[ 0 ] == null )
+        json.params = [];
+      payload = JSON.stringify( json );
+    }
 
     try {
-      if ( this._config.mode == "scgi" )
-        response = await this.sendRtorrent( request );
-      else if ( this._config.mode == "xmlrpc" )
-        response = await this.sendXmlRPC( request );
+      if ( this.config.mode == "scgi" )
+        response = await this.sendSCGI( this.config.rpctype, payload );
+      else if ( this.config.mode == "http" )
+        response = await this.sendHTTP( this.config.rpctype, payload );
       else
         throw new Error( "Unknown connection mode" );
     }
@@ -222,8 +289,30 @@ export class Connection {
       throw e;
     }
 
-    result = Deserializer.deserialize( response );
-    return result[0];
+    return response;
+  }
+
+
+
+  /**
+   * Check for a URLObject
+  */
+  private isURLObject( T: any ): T is UrlObject {
+    return T
+      && typeof T == "object"
+      && ( 'protocol' in T )
+      && ( 'pathname' in T && 'host' in T )
+  }
+
+
+  /**
+   * Check for a IPC or TCP socket type
+   */
+  private isSocket( T: any ): T is net.SocketConnectOpts {
+    return T
+      && typeof T == "object"
+      && ( ! ('protocol' in T) )
+      && ( ( 'path' in T ) || ( 'port' in T && 'host' in T ) )
   }
 
 }

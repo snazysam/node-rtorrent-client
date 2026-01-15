@@ -6,9 +6,7 @@ import { Connection, ConnectionConfig } from './connection.js';
 import { SystemInterface } from './interface/system.js';
 import { TorrentInterface } from './interface/torrent.js';
 import { FileInterface } from './interface/file.js';
-import {FaultError} from './deserializer.js';
-
-export { FaultError } from './deserializer.js';
+import { XMLFaultError } from './deserializer.js';
 
 
 export type CallParam = string | number | Buffer | undefined;
@@ -30,13 +28,13 @@ type Context = 'none' | 'sub' | 'primary';
  */
 export class Client {
 
-  private _context: Context;
-  private _calls: CallParam[];
+  private context: Context;
+  private calls: CallParam[];
 
   protected connection: Connection;
-  protected system: SystemInterface;
-  protected torrent: TorrentInterface;
-  protected file: FileInterface;
+  public system: SystemInterface;
+  public torrent: TorrentInterface;
+  public file: FileInterface;
 
   /**
    * Instantiate a new client
@@ -46,8 +44,8 @@ export class Client {
     this.connection = new Connection( connectionConfig );
 
     // Track call context
-    this._context = 'primary';
-    this._calls = [];
+    this.context = 'primary';
+    this.calls = [];
 
     // Import interfaces
     this.system = new SystemInterface( this );
@@ -59,9 +57,9 @@ export class Client {
   /**
    * Reset the client except for connection information
    */
-  reset() {
-    this._calls = [];
-    this._context = 'primary';
+  public reset(): void {
+    this.calls = [];
+    this.context = 'primary';
   }
 
 
@@ -71,8 +69,9 @@ export class Client {
    * @returns {Promise<String>} - Resolves if able to connect
    * @throws                    - Rejects if unable to connect
    */
-  async testConnection(): Promise<string> {
-    return await this.system.apiVersion().send();
+  public async testConnection(): Promise<boolean> {
+    await this.system.apiVersion().send();
+    return true;
   }
 
 
@@ -82,10 +81,10 @@ export class Client {
    * @param {CallParam[]} params    - Call parameters as required
    * @returns {this}                - Client object to chain calls
    */
-  addMultiCall( method: string, ...params: CallParam[] ): this {
+  public addMultiCall( method: string, ...params: CallParam[] ): this {
     this.requiresContext( [ 'primary' ] );
-    this._calls.push( method, ...params );
-    this._context = "sub";
+    this.calls.push( method, ...params );
+    this.context = "sub";
     return this;
   }
 
@@ -97,9 +96,9 @@ export class Client {
    * @param {...CallParam} [params] - Parameters for the call
    * @returns {this}                - Client object to chain calls
    */
-  addCall( method: string, hash: CallParam=undefined, ...params: CallParam[] ): this {
+  public addCall( method: string, hash: CallParam=undefined, ...params: CallParam[] ): this {
     this.requiresContext( [ 'sub', 'primary' ] );
-    if ( this._context == "sub" )
+    if ( this.context == "sub" )
       return this.addSub( method, ...params );
     else
       return this.addPrimary( method, hash, ...params );
@@ -113,11 +112,11 @@ export class Client {
    * @param {...CallParam} [params]   - Parameters for the call
    * @returns {this}                  - Client object to chain calls
    */
-  addPrimary( method: string, hash: CallParam=undefined, ...params: CallParam[] ): this {
+  public addPrimary( method: string, hash: CallParam=undefined, ...params: CallParam[] ): this {
     this.requiresContext( [ 'primary' ] );
-    this._calls.push( method, hash, ...params );
+    this.calls.push( method, hash, ...params );
     // Prevent sub-calls
-    this._context = "none";
+    this.context = "none";
     return this;
   }
 
@@ -128,9 +127,9 @@ export class Client {
    * @param {...CallParam} [params] - Parameters for the call
    * @returns {this}                - Client object to chain calls
    */
-  addSub( method: string, ...params: CallParam[] ): this {
+  public addSub( method: string, ...params: CallParam[] ): this {
     this.requiresContext( [ 'sub' ] );
-    this._calls.push( method + "=" + params.join( ',' ) );
+    this.calls.push( method + "=" + params.join( ',' ) );
     return this;
   }
 
@@ -141,9 +140,9 @@ export class Client {
    * @param {Context[]} contexts - Permissable contexts
    * @throws                      - If context is not as required
    */
-  requiresContext( contexts: Context[] ) {
-    if ( ! contexts.includes( this._context ) )
-      throw new Error( "Context is " + this._context + ". Call requires context of " + contexts.join( ', or ' ) );
+  private requiresContext( contexts: Context[] ) {
+    if ( ! contexts.includes( this.context ) )
+      throw new Error( "Context is " + this.context + ". Call requires context of " + contexts.join( ', or ' ) );
   }
 
 
@@ -158,7 +157,7 @@ export class Client {
 
     // Use provided calls or our own
     if ( ! calls || ! calls.length ) {
-      calls = this._calls;
+      calls = this.calls;
       usingQueued = true;
     }
 
@@ -168,7 +167,7 @@ export class Client {
       result = await this.connection.send( method as string, calls );
     }
     catch( err ) {
-      if ( err instanceof FaultError )
+      if ( err instanceof XMLFaultError )
         throw err;
       else
         throw new Error( `Failed to send command: ${(err as Error).message}` );
