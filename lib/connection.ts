@@ -13,11 +13,11 @@ import type { CallParam } from './client.js';
 import {randomInt} from 'node:crypto';
 
 
-type Mode = "scgi" | "http";
+type ConnectionMode = "scgi" | "http";
 type RPCType = "xml" | "json";
 
-export interface ConnectionConfig {
-  mode: Mode,
+interface ConnectionConfig {
+  mode: ConnectionMode,
   rpctype: RPCType,
   socket?: string
   host?: string,
@@ -48,7 +48,7 @@ const defaultConfig = {
  * A connection handler to rTorrent
  * @class
  */
-export class Connection {
+class Connection {
 
   private config: ConnectionConfig;
   private endpoint!: net.SocketConnectOpts | url.UrlObject;
@@ -317,3 +317,10 @@ export class Connection {
 
 }
 
+
+export {
+  Connection,
+  ConnectionConfig,
+  ConnectionMode,
+  RPCType
+};

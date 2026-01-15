@@ -5,19 +5,21 @@ import { Client } from "../lib/client.js";
 
 import {expect} from 'chai';
 import assert from 'assert'
-import {ConnectionConfig} from "../lib/connection.js";
+
+import * as Conn from "../lib/connection.js";
+// @ts-ignore: Node 22+ failure with non-default interface import
 
 
 let server: MockRTorrent;
 let client: Client;
 
-const XMLConfig: ConnectionConfig = {
+const XMLConfig: Conn.ConnectionConfig = {
   'mode': 'scgi',
   'socket': '/tmp/mockrtorrent.sock',
   'rpctype': 'xml',
 };
 
-const JSONConfig: ConnectionConfig = {
+const JSONConfig: Conn.ConnectionConfig = {
   'mode': 'scgi',
   'socket': '/tmp/mockrtorrent.sock',
   'rpctype': 'json',
